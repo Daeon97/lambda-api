@@ -1,0 +1,5 @@
+{
+  "body": "{\"rcNumber\": \"Test-RC-Number\", \"companyName\": \"Test Company Name\", \"companyAddress\": \"Test Company Address\", \"iso\": \"Test-ISO\"}",
+  "path": "/path/to/resource",
+  "httpMethod": "PATCH"
+}
