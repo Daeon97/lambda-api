@@ -1,16 +1,16 @@
-// import { AWSError, DynamoDB as DB } from 'aws-sdk';
-// import { Converter } from 'aws-sdk/clients/dynamodb';
-// import { PromiseResult } from 'aws-sdk/lib/request';
+import { AWSError, DynamoDB } from 'aws-sdk';
+import { Converter } from 'aws-sdk/clients/dynamodb';
+import { PromiseResult } from 'aws-sdk/lib/request';
 import { APIGatewayProxyResult } from "aws-lambda";
 import { Company } from '../models/company';
 
 export class DynamoDBDelegate {
     public async storeDataToDatabase(company: Company): Promise<APIGatewayProxyResult> {
-        // const tableName: string = "iot-core-to-dynamo-db-function-for-vectar-clean-energy-VectarCleanEnergy-14JT144FQWD4Q";
+        const tableName = "iot-core-to-dynamo-db-function-for-vectar-clean-energy-VectarCleanEnergy-14JT144FQWD4Q";
 
-        // const db: DB = new DB();
+        // const db = new DynamoDB();
 
-        // await this.putItem({ tableName, db });
+        // return await this.putItem(tableName, db);
 
         const statusCode = 200;
 

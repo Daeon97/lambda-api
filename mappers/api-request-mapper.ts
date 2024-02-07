@@ -8,35 +8,33 @@ enum RequestMethod {
 }
 
 export class APIRequestMapper {
-    constructor(private readonly requestMethod: string, private readonly requestBody: string | null | undefined) { }
-
-    public async processRequest(): Promise<APIGatewayProxyResult> {
-        return this.checkRequestMethodSupported();
+    public async processRequest({ requestMethod, path, requestBody }: { requestMethod: string; path: string; requestBody: string | null | undefined }): Promise<APIGatewayProxyResult> {
+        return this.checkRequestMethodSupported({ requestMethod, path, requestBody });
     }
 
-    private async checkRequestMethodSupported(): Promise<APIGatewayProxyResult> {
-        if (this.requestMethod !== RequestMethod.Post && this.requestMethod !== RequestMethod.Get) {
+    private async checkRequestMethodSupported({ requestMethod, path, requestBody }: { requestMethod: string; path: string; requestBody: string | null | undefined }): Promise<APIGatewayProxyResult> {
+        if (requestMethod !== RequestMethod.Post && requestMethod !== RequestMethod.Get) {
             const statusCode = 405;
 
             const result: APIGatewayProxyResult = {
                 statusCode,
                 body: JSON.stringify({
                     statusCode,
-                    message: `Request method '${this.requestMethod}' is not supported`,
+                    message: `Request method '${requestMethod}' is not supported`,
                 }),
             };
 
             return result;
         }
 
-        switch (this.requestMethod) {
+        switch (requestMethod) {
             case RequestMethod.Post:
                 const apiPostRequestHandler = new APIPostRequestHandler();
-                return await apiPostRequestHandler.processPostRequest(this.requestBody);
+                return await apiPostRequestHandler.processPostRequest(requestBody);
 
             case RequestMethod.Get:
                 const apiGetRequestHandler = new APIGetRequestHandler();
-                return await apiGetRequestHandler.processGetRequest(this.requestBody);
+                return await apiGetRequestHandler.processGetRequest(path);
         }
     }
 }

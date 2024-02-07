@@ -22,13 +22,13 @@ Resources:
         ElectriSafeGetApi:
           Type: HttpApi
           Properties:
-            Path: /{rc_number}
+            Path: /electri-safe/{rcNumber}
             Method: GET
             TimeoutInMillis: 10000
         ElectriSafePostApi:
           Type: HttpApi
           Properties:
-            Path: /
+            Path: /electri-safe
             Method: POST
             TimeoutInMillis: 10000
     Metadata:

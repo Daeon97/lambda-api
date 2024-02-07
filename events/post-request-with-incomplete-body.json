@@ -1,5 +1,5 @@
 {
   "body": "{\"rcNumber\": \"Test-RC-Number\", \"companyName\": \"Test Company Name\", \"iso\": \"Test-ISO\"}",
-  "path": "/path/to/resource",
+  "path": "/electri-safe",
   "httpMethod": "POST"
 }

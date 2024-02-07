@@ -1,14 +1,14 @@
 {
-  "name": "hello_world",
+  "name": "lambda-api",
   "version": "1.0.0",
-  "description": "hello world sample for NodeJS",
+  "description": "A simple Lambda function powered by Amazon API Gateway that collects and processes data from the web API and stores to Amazon Dynamo DB",
   "main": "app.js",
-  "repository": "https://github.com/awslabs/aws-sam-cli/tree/develop/samcli/local/init/templates/cookiecutter-aws-sam-hello-nodejs",
-  "author": "SAM CLI",
-  "license": "MIT",
-  "dependencies": {
-    "esbuild": "^0.14.14"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Daeon97/lambda-api.git"
   },
+  "author": "Engels Immanuel",
+  "license": "MIT",
   "scripts": {
     "unit": "jest",
     "lint": "eslint '*.ts' --quiet --fix",
@@ -17,16 +17,14 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92",
-    "@types/jest": "^29.4.0",
     "@types/node": "^17.0.13",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
     "@typescript-eslint/parser": "^5.10.2",
+    "aws-sdk": "^2.1551.0",
     "eslint": "^8.8.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "jest": "^29.3.1",
     "prettier": "^2.5.1",
-    "ts-jest": "^29.0.5",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.5"
   }
