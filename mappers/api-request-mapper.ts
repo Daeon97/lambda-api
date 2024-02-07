@@ -8,7 +8,7 @@ enum RequestMethod {
 }
 
 export class APIRequestMapper {
-    public async processRequest({ requestMethod, path, requestBody }: { requestMethod: string; path: string; requestBody: string | null | undefined }): Promise<APIGatewayProxyResult> {
+    public processRequest({ requestMethod, path, requestBody }: { requestMethod: string; path: string; requestBody: string | null | undefined }): Promise<APIGatewayProxyResult> {
         return this.checkRequestMethodSupported({ requestMethod, path, requestBody });
     }
 

@@ -3,8 +3,7 @@ import { Company } from "../models/company";
 import { DynamoDBDelegate } from "../delegates/dynamo-db-delegate";
 
 export class APIPostRequestHandler {
-
-    public async processPostRequest(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
+    public processPostRequest(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
         return this.checkPostRequestHasBody(requestBody);
     }
 

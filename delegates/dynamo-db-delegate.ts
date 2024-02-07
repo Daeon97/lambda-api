@@ -1,24 +1,34 @@
 import { AWSError, DynamoDB } from 'aws-sdk';
-import { Converter } from 'aws-sdk/clients/dynamodb';
+import { Converter, PutItemInputAttributeMap, Key } from 'aws-sdk/clients/dynamodb';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { APIGatewayProxyResult } from "aws-lambda";
 import { Company } from '../models/company';
 
 export class DynamoDBDelegate {
     public async storeDataToDatabase(company: Company): Promise<APIGatewayProxyResult> {
-        const tableName = "iot-core-to-dynamo-db-function-for-vectar-clean-energy-VectarCleanEnergy-14JT144FQWD4Q";
+        const storeCompanyResult = await this.storeCompany(company);
 
-        // const db = new DynamoDB();
+        if (storeCompanyResult.$response.data) {
+            const statusCode = 201;
 
-        // return await this.putItem(tableName, db);
+            const result: APIGatewayProxyResult = {
+                statusCode,
+                body: JSON.stringify({
+                    statusCode,
+                    message: `Account with company name '${company.name}', RC number '${company.rcNumber}', company address '${company.address}' and company ISO '${company.iso}' was created successfully`,
+                }),
+            }
 
-        const statusCode = 200;
+            return result;
+        }
+
+        const statusCode = 500;
 
         const result: APIGatewayProxyResult = {
             statusCode,
             body: JSON.stringify({
                 statusCode,
-                message: `Account with company name '${company.name}', RC number '${company.rcNumber}', company address '${company.address}' and company ISO '${company.iso}' was created successfully`,
+                message: `Internal server error. Account could not be created and we do not know why`,
             }),
         }
 
@@ -26,88 +36,87 @@ export class DynamoDBDelegate {
     }
 
     public async getDataFromDatabase(rcNumber: string): Promise<APIGatewayProxyResult> {
-        const statusCode = 200;
+        const getCompanyResult = await this.getCompany(rcNumber);
+
+        if (getCompanyResult.$response.data && getCompanyResult.Item) {
+            const statusCode = 200;
+
+            const databaseObject: { [key: string]: string } = Converter.unmarshall(getCompanyResult.Item);
+            const company = Company.fromDatabaseObject(databaseObject);
+
+            const result: APIGatewayProxyResult = {
+                statusCode,
+                body: JSON.stringify({
+                    statusCode,
+                    rcNumber: company.rcNumber,
+                    companyName: company.name,
+                    companyAddress: company.address,
+                    iso: company.iso,
+                }),
+            }
+
+            return result;
+        }
+
+        const statusCode = 404;
 
         const result: APIGatewayProxyResult = {
             statusCode,
             body: JSON.stringify({
                 statusCode,
-                rcNumber: 'Meow',
-                companyName: 'Meow',
-                companyAddress: 'Meow',
-                iso: 'Meow',
+                message: `Company with RC Number ${rcNumber} was not found. Please double check the supplied resource identifier`,
             }),
         }
 
         return result;
     }
 
-    // private async putItem({ tableName, db }: { tableName: string; db: DB }): Promise<PromiseResult<DB.PutItemOutput, AWSError>> {
-    //     const currentEnergyKwh: number = await this.computeCurrentEnergyKwh({ tableName, db });
+    private storeCompany(company: Company): Promise<PromiseResult<DynamoDB.PutItemOutput, AWSError>> {
+        const db = this.database;
+        const tableName = this.tableName;
 
-    //     return db.putItem({
-    //         TableName: tableName,
-    //         Item: {
-    //             "DeviceId": {
-    //                 S: `${this.message.deviceId}`
-    //             },
-    //             "BoxStatus": {
-    //                 S: `${this.message.boxStatus}`
-    //             },
-    //             "CurrentEnergyKwh": {
-    //                 N: `${currentEnergyKwh}`
-    //             },
-    //             "CummulativeEnergyKwh": {
-    //                 N: `${this.message.cummulativeEnergyKwh}`
-    //             },
-    //             "Latitude": {
-    //                 N: `${this.message.latitude}`
-    //             },
-    //             "Longitude": {
-    //                 N: `${this.message.longitude}`
-    //             },
-    //             "Timestamp": {
-    //                 N: `${this.message.timestamp}`
-    //             }
-    //         }
-    //     }).promise();
-    // }
+        const companyItem: PutItemInputAttributeMap = {
+            "RCNumber": {
+                S: `${company.rcNumber}`
+            },
+            "CompanyName": {
+                S: `${company.name}`
+            },
+            "CompanyAddress": {
+                S: `${company.address}`
+            },
+            "ISO": {
+                S: `${company.iso}`
+            }
+        };
 
-    // private async computeCurrentEnergyKwh({ tableName, db }: { tableName: string; db: DB }): Promise<number> {
-    //     let currentEnergyKwh: number = 0;
+        return db.putItem({
+            TableName: tableName,
+            Item: companyItem
+        }).promise();
+    }
 
-    //     const getLastItem: PromiseResult<DB.QueryOutput, AWSError> = await db.query({
-    //         TableName: tableName,
-    //         ConsistentRead: true,
-    //         ScanIndexForward: false,
-    //         ExpressionAttributeNames: {
-    //             "#D": "DeviceId",
-    //             "#C": "CummulativeEnergyKwh"
-    //         },
-    //         ExpressionAttributeValues: {
-    //             ":d": {
-    //                 "S": "0001"
-    //             }
-    //         },
-    //         ProjectionExpression: "#D, #C",
-    //         KeyConditionExpression: "#D = :d",
-    //         Limit: 1
-    //     }).promise();
+    private getCompany(rcNumber: string): Promise<PromiseResult<DynamoDB.GetItemOutput, AWSError>> {
+        const db = this.database;
+        const tableName = this.tableName;
 
-    //     if (getLastItem.$response.data) {
-    //         const databaseItems: DB.ItemList | undefined = getLastItem.Items;
+        const companyKey: Key = {
+            "RCNumber": {
+                S: `${rcNumber}`
+            }
+        };
 
-    //         if (databaseItems && databaseItems.length > 0) {
-    //             const lastItem: { [key: string]: any } = Converter.unmarshall(databaseItems.at(0)!);
+        return db.getItem({
+            TableName: tableName,
+            Key: companyKey
+        }).promise();
+    }
 
-    //             this.message.cummulativeEnergyKwh === 0
-    //                 ? currentEnergyKwh = this.message.cummulativeEnergyKwh
-    //                 : currentEnergyKwh = this.message.cummulativeEnergyKwh - (lastItem.CummulativeEnergyKwh as number);
-    //         } else {
-    //             currentEnergyKwh = this.message.cummulativeEnergyKwh;
-    //         }
-    //     }
+    private get database(): DynamoDB {
+        return new DynamoDB();
+    }
 
-    //     return currentEnergyKwh;
-    // }
+    private get tableName(): string {
+        return "iot-core-to-dynamo-db-function-for-vectar-clean-energy-VectarCleanEnergy-14JT144FQWD4Q";
+    }
 }

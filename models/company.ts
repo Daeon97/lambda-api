@@ -14,4 +14,13 @@ export class Company {
             object.iso
         );
     }
+
+    static fromDatabaseObject(databaseObject: { [key: string]: string }): Company {
+        return new Company(
+            databaseObject.RCNumber,
+            databaseObject.CompanyName,
+            databaseObject.CompanyAddress,
+            databaseObject.ISO
+        );
+    }
 }

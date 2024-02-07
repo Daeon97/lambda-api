@@ -2,8 +2,7 @@ import { APIGatewayProxyResult } from "aws-lambda";
 import { DynamoDBDelegate } from "../delegates/dynamo-db-delegate";
 
 export class APIGetRequestHandler {
-
-    public async processGetRequest(path: string): Promise<APIGatewayProxyResult> {
+    public processGetRequest(path: string): Promise<APIGatewayProxyResult> {
         return this.checkGetRequestHasPathVariable(path);
     }
 

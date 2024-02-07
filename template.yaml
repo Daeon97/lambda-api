@@ -49,12 +49,9 @@ Resources:
           AttributeType: "S"
         - AttributeName: "CompanyName"
           AttributeType: "S"
-        - AttributeName: "CompanyAddress"
-          AttributeType: "S"
-        - AttributeName: "ISO"
-          AttributeType: "S"
       KeySchema:
         - AttributeName: "RCNumber"
           KeyType: "HASH"
         - AttributeName: "CompanyName"
           KeyType: "RANGE"
+      BillingMode: "PAY_PER_REQUEST"
