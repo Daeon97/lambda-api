@@ -54,7 +54,7 @@ export class APIPostRequestHandler {
     }
 
     private computeCompany(requestBody: string): Company {
-        const requestBodyObject: { key: string, value: string } = JSON.parse(requestBody);
+        const requestBodyObject = JSON.parse(requestBody);
 
         const company = Company.fromObject(requestBodyObject);
 

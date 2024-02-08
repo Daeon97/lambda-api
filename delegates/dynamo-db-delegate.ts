@@ -117,6 +117,6 @@ export class DynamoDBDelegate {
     }
 
     private get tableName(): string {
-        return "iot-core-to-dynamo-db-function-for-vectar-clean-energy-VectarCleanEnergy-14JT144FQWD4Q";
+        return "lambda-api-for-electri-safe-ElectriSafe-I5XRZK9EVS3T";
     }
 }

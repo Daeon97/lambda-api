@@ -47,11 +47,7 @@ Resources:
       AttributeDefinitions:
         - AttributeName: "RCNumber"
           AttributeType: "S"
-        - AttributeName: "CompanyName"
-          AttributeType: "S"
       KeySchema:
         - AttributeName: "RCNumber"
           KeyType: "HASH"
-        - AttributeName: "CompanyName"
-          KeyType: "RANGE"
       BillingMode: "PAY_PER_REQUEST"
