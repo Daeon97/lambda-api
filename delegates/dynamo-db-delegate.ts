@@ -7,6 +7,13 @@ import { Device } from '../models/device';
 import { Owner } from '../models/owner';
 import { Data } from '../models/data';
 
+enum StatusCode {
+    Created = 201,
+    Ok = 200,
+    NotFound = 404,
+    InternalError = 500,
+}
+
 export class DynamoDBDelegate {
     public async storeOrUpdateDeviceDataInDatabase(device: Device): Promise<APIGatewayProxyResult> {
         const getDeviceResult = await this.getDevice(device.id);
@@ -19,7 +26,7 @@ export class DynamoDBDelegate {
             await this.updateDevice({ nextIndex, device });
 
             const result: APIGatewayProxyResult = {
-                statusCode: 200,
+                statusCode: StatusCode.Ok,
                 body: JSON.stringify({
                     message: `Device with id '${device.id}', latitude '${device.latitude}' and longitude '${device.longitude}' was updated successfully`,
                 }),
@@ -31,7 +38,7 @@ export class DynamoDBDelegate {
         await this.storeDevice(device);
 
         const result: APIGatewayProxyResult = {
-            statusCode: 201,
+            statusCode: StatusCode.Created,
             body: JSON.stringify({
                 message: `Device with id '${device.id}', latitude '${device.latitude}' and longitude '${device.longitude}' was created successfully`,
             }),
@@ -41,12 +48,25 @@ export class DynamoDBDelegate {
     }
 
     public async updateDeviceDataInDatabaseWithOwnerInfo(owner: Owner): Promise<APIGatewayProxyResult> {
-        await this.updateDeviceWithOwnerInfo(owner);
+        const getDeviceResult = await this.getDevice(owner.deviceId);
+
+        if (getDeviceResult.$response.data && getDeviceResult.Item) {
+            await this.updateDeviceWithOwnerInfo(owner);
+
+            const result: APIGatewayProxyResult = {
+                statusCode: StatusCode.Ok,
+                body: JSON.stringify({
+                    message: `Owner info with name '${owner.name}', email '${owner.email}' and address '${owner.address}' with emergency contact name ${owner.emergencyContact.name}, emergency contact phone ${owner.emergencyContact.phone} and emergency contact relationship ${owner.emergencyContact.relationship} is now associated with device ${owner.deviceId}`,
+                }),
+            }
+
+            return result;
+        }
 
         const result: APIGatewayProxyResult = {
-            statusCode: 200,
+            statusCode: StatusCode.NotFound,
             body: JSON.stringify({
-                message: `Owner info with name '${owner.name}', email '${owner.email}' and address '${owner.address}' with emergency contact name ${owner.emergencyContact.name}, emergency contact phone ${owner.emergencyContact.phone} and emergency contact relationship ${owner.emergencyContact.relationship} is now associated with device ${owner.deviceId}`,
+                message: `Device with ID '${owner.deviceId}' not found. Please specify the correct device ID`,
             }),
         }
 
@@ -91,7 +111,7 @@ export class DynamoDBDelegate {
             }
 
             const result: APIGatewayProxyResult = {
-                statusCode: 200,
+                statusCode: StatusCode.Ok,
                 body: JSON.stringify({
                     data: resultBodyDataItems
                 }),
@@ -101,49 +121,13 @@ export class DynamoDBDelegate {
         }
 
         const result: APIGatewayProxyResult = {
-            statusCode: 500,
+            statusCode: StatusCode.InternalError,
             body: JSON.stringify({
                 message: "An internal error occurred"
             }),
         }
 
         return result;
-    }
-
-    private storeDevice(device: Device): Promise<PromiseResult<DynamoDB.PutItemOutput, AWSError>> {
-        const db = this.database;
-        const tableName = this.tableName;
-
-        const deviceItem: PutItemInputAttributeMap = {
-            "DeviceId": {
-                S: `${device.id}`
-            },
-            "Coordinates": {
-                L: [
-                    {
-                        M: {
-                            "Hash": {
-                                S: this.geohash({ latitude: device.latitude, longitude: device.longitude })
-                            },
-                            "Latitude": {
-                                N: `${device.latitude}`
-                            },
-                            "Longitude": {
-                                N: `${device.longitude}`
-                            },
-                            "Timestamp": {
-                                N: `${this.unixTimestamp}`
-                            }
-                        }
-                    }
-                ]
-            },
-        };
-
-        return db.putItem({
-            TableName: tableName,
-            Item: deviceItem
-        }).promise();
     }
 
     private getDevice(id: string): Promise<PromiseResult<DynamoDB.GetItemOutput, AWSError>> {
@@ -205,6 +189,42 @@ export class DynamoDBDelegate {
                 ":c": coordinatesItem
             },
             UpdateExpression: `SET #c[${nextIndex}] = :c`
+        }).promise();
+    }
+
+    private storeDevice(device: Device): Promise<PromiseResult<DynamoDB.PutItemOutput, AWSError>> {
+        const db = this.database;
+        const tableName = this.tableName;
+
+        const deviceItem: PutItemInputAttributeMap = {
+            "DeviceId": {
+                S: `${device.id}`
+            },
+            "Coordinates": {
+                L: [
+                    {
+                        M: {
+                            "Hash": {
+                                S: this.geohash({ latitude: device.latitude, longitude: device.longitude })
+                            },
+                            "Latitude": {
+                                N: `${device.latitude}`
+                            },
+                            "Longitude": {
+                                N: `${device.longitude}`
+                            },
+                            "Timestamp": {
+                                N: `${this.unixTimestamp}`
+                            }
+                        }
+                    }
+                ]
+            },
+        };
+
+        return db.putItem({
+            TableName: tableName,
+            Item: deviceItem
         }).promise();
     }
 
