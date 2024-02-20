@@ -7,30 +7,39 @@ Globals:
     Runtime: nodejs16.x
     Timeout: 60
     MemorySize: 128
+    Layers:
+      - arn:aws:lambda:eu-north-1:580510132728:layer:GeohashingLayer:7
 
 Resources:
-  ElectriSafeFunction:
+  TravelGuardFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: ElectriSafeFunction
+      FunctionName: TravelGuardFunction
       CodeUri: .
       Handler: app.lambdaHandler
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref ElectriSafe
+            TableName: !Ref TravelGuard
       Events:
-        ElectriSafeGetApi:
+        TravelGuardGetApi:
           Type: HttpApi
           Properties:
-            Path: /electri-safe/{rcNumber}
+            Path: /travel-guard
             Method: GET
             TimeoutInMillis: 10000
-        ElectriSafePostApi:
+        TravelGuardPostApi:
           Type: HttpApi
           Properties:
-            Path: /electri-safe
+            Path: /travel-guard
             Method: POST
             TimeoutInMillis: 10000
+        TravelGuardPatchApi:
+          Type: HttpApi
+          Properties:
+            Path: /travel-guard
+            Method: PATCH
+            TimeoutInMillis: 10000
+
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -40,14 +49,15 @@ Resources:
           - app.ts
         External:
           - "aws-sdk"
+          - "geohashing"
 
-  ElectriSafe:
+  TravelGuard:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
-        - AttributeName: "RCNumber"
+        - AttributeName: "DeviceId"
           AttributeType: "S"
       KeySchema:
-        - AttributeName: "RCNumber"
+        - AttributeName: "DeviceId"
           KeyType: "HASH"
       BillingMode: "PAY_PER_REQUEST"

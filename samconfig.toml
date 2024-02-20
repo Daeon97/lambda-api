@@ -4,7 +4,7 @@ version = 0.1
 
 [default]
 [default.global.parameters]
-stack_name = "lambda-api-for-electri-safe"
+stack_name = "lambda-api-for-travel-guard"
 
 [default.build.parameters]
 cached = true
@@ -17,7 +17,7 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
-s3_prefix = "lambda-api-for-electri-safe"
+s3_prefix = "lambda-api-for-travel-guard"
 region = "eu-north-1"
 image_repositories = []
 

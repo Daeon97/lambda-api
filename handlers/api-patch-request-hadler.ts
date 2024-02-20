@@ -1,13 +1,13 @@
 import { APIGatewayProxyResult } from "aws-lambda";
-import { Device } from "../models/device";
+import { Owner } from "../models/owner";
 import { DynamoDBDelegate } from "../delegates/dynamo-db-delegate";
 
-export class APIPostRequestHandler {
-    public processPostRequest(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
-        return this.checkPostRequestHasBody(requestBody);
+export class APIPatchRequestHandler {
+    public processPatchRequest(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
+        return this.checkPatchRequestHasBody(requestBody);
     }
 
-    private async checkPostRequestHasBody(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
+    private async checkPatchRequestHasBody(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
         if (!requestBody) {
             const statusCode = 400;
 
@@ -22,21 +22,21 @@ export class APIPostRequestHandler {
             return result;
         }
 
-        return this.checkPostRequestBodyComplete(requestBody);
+        return this.checkPatchRequestBodyComplete(requestBody);
     }
 
-    private async checkPostRequestBodyComplete(requestBody: string): Promise<APIGatewayProxyResult> {
+    private async checkPatchRequestBodyComplete(requestBody: string): Promise<APIGatewayProxyResult> {
         let result: APIGatewayProxyResult;
 
         try {
-            const device = this.computeDevice(requestBody);
+            const owner = this.computeOwner(requestBody);
 
-            if (!device.id || !device.latitude || !device.longitude) {
+            if (!owner.deviceId || !owner.name || !owner.email || !owner.address || !owner.emergencyContact || !owner.emergencyContact.name || !owner.emergencyContact.phone || !owner.emergencyContact.relationship) {
                 throw 'Some fields are undefined';
             }
 
             const dynamoDBDelegate = new DynamoDBDelegate();
-            return await dynamoDBDelegate.storeOrUpdateDeviceDataInDatabase(device);
+            return await dynamoDBDelegate.updateDeviceDataInDatabaseWithOwnerInfo(owner);
 
         } catch (err) {
             const statusCode = 400;
@@ -53,11 +53,11 @@ export class APIPostRequestHandler {
         return result;
     }
 
-    private computeDevice(requestBody: string): Device {
+    private computeOwner(requestBody: string): Owner {
         const requestBodyObject = JSON.parse(requestBody);
 
-        const device = Device.fromObject(requestBodyObject);
+        const owner = Owner.fromObject(requestBodyObject);
 
-        return device;
+        return owner;
     }
 }
