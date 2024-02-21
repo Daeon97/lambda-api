@@ -1,6 +1,8 @@
 import { APIGatewayProxyResult } from "aws-lambda";
 import { Owner } from "../models/owner";
-import { DynamoDBDelegate } from "../delegates/dynamo-db-delegate";
+import { DBDelegate } from "../delegates/db-delegate";
+import { SMSDelegate } from "../delegates/sms-delegate";
+import { StatusCode } from '../utils/enums';
 
 export class APIPatchRequestHandler {
     public processPatchRequest(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
@@ -9,12 +11,9 @@ export class APIPatchRequestHandler {
 
     private async checkPatchRequestHasBody(requestBody: string | null | undefined): Promise<APIGatewayProxyResult> {
         if (!requestBody) {
-            const statusCode = 400;
-
             const result: APIGatewayProxyResult = {
-                statusCode,
+                statusCode: StatusCode.BadRequest,
                 body: JSON.stringify({
-                    statusCode,
                     message: `Request body is missing. Please specify a request body for this request`,
                 }),
             }
@@ -31,20 +30,21 @@ export class APIPatchRequestHandler {
         try {
             const owner = this.computeOwner(requestBody);
 
-            if (!owner.deviceId || !owner.name || !owner.email || !owner.address || !owner.emergencyContact || !owner.emergencyContact.name || !owner.emergencyContact.phone || !owner.emergencyContact.relationship) {
-                throw 'Some fields are undefined';
-            }
+            const dbDelegate = new DBDelegate();
+            const result = await dbDelegate.updateDeviceDataInDatabaseWithOwnerInfo(owner);
 
-            const dynamoDBDelegate = new DynamoDBDelegate();
-            return await dynamoDBDelegate.updateDeviceDataInDatabaseWithOwnerInfo(owner);
+            const smsDelegate = new SMSDelegate();
+            smsDelegate.createTopicForEmergencyAlertsAndSendMessage({
+                content: `${owner.name} just registered you as an emergency contact`,
+                recipientPhone: owner.emergencyContact.phone
+            });
+
+            return result;
 
         } catch (err) {
-            const statusCode = 400;
-
             result = {
-                statusCode,
+                statusCode: StatusCode.BadRequest,
                 body: JSON.stringify({
-                    statusCode,
                     message: `Request body is missing one or more fields. Please specify all required fields`,
                 }),
             }
@@ -57,6 +57,10 @@ export class APIPatchRequestHandler {
         const requestBodyObject = JSON.parse(requestBody);
 
         const owner = Owner.fromObject(requestBodyObject);
+
+        if (!owner.deviceId || !owner.name || !owner.email || !owner.address || !owner.emergencyContact || !owner.emergencyContact.name || !owner.emergencyContact.phone || !owner.emergencyContact.relationship) {
+            throw 'Some fields are undefined';
+        }
 
         return owner;
     }

@@ -12,11 +12,11 @@ export class Owner {
     static fromObject(object: any): Owner {
         return new Owner(
             object.deviceId,
-            object.name,
-            object.email,
-            object.address,
+            object.ownerName,
+            object.ownerEmail,
+            object.ownerAddress,
             EmergencyContact.fromObject(
-                object.emergencyContact,
+                object,
             )
         );
     }

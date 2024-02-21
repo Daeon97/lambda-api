@@ -7,9 +7,9 @@ export class EmergencyContact {
 
     static fromObject(object: any): EmergencyContact {
         return new EmergencyContact(
-            object.name,
-            object.phone,
-            object.relationship
+            object.emergencyContactName,
+            object.emergencyContactPhone,
+            object.emergencyContactRelationship
         );
     }
 

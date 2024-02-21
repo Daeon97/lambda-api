@@ -6,15 +6,9 @@ import { encodeBase32 } from "geohashing";
 import { Device } from '../models/device';
 import { Owner } from '../models/owner';
 import { Data } from '../models/data';
+import { StatusCode } from '../utils/enums';
 
-enum StatusCode {
-    Created = 201,
-    Ok = 200,
-    NotFound = 404,
-    InternalError = 500,
-}
-
-export class DynamoDBDelegate {
+export class DBDelegate {
     public async storeOrUpdateDeviceDataInDatabase(device: Device): Promise<APIGatewayProxyResult> {
         const getDeviceResult = await this.getDevice(device.id);
 
@@ -77,13 +71,14 @@ export class DynamoDBDelegate {
         const getAllDataResult = await this.getAllData();
 
         if (getAllDataResult.$response.data && getAllDataResult.Items) {
-            let resultBodyCoordinates: { [key: string]: any }[] = [];
             let resultOwnerData: { [key: string]: string } = {};
             let resultBodyDataItems: { [key: string]: any }[] = [];
 
             for (const item of getAllDataResult.Items) {
                 const databaseObject: { [key: string]: any } = Converter.unmarshall(item);
                 const data = Data.fromDatabaseObject(databaseObject);
+
+                let resultBodyCoordinates: { [key: string]: any }[] = [];
 
                 for (const coordinate of data.coordinates) {
                     resultBodyCoordinates.push({

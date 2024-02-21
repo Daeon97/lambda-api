@@ -2,12 +2,7 @@ import { APIGatewayProxyResult } from 'aws-lambda';
 import { APIPostRequestHandler } from '../handlers/api-post-request-handler';
 import { APIGetRequestHandler } from '../handlers/api-get-request-handler';
 import { APIPatchRequestHandler } from '../handlers/api-patch-request-hadler';
-
-enum RequestMethod {
-    Get = "GET",
-    Post = "POST",
-    Patch = "PATCH",
-}
+import { RequestMethod, StatusCode } from '../utils/enums';
 
 export class APIRequestMapper {
     public processRequest({ requestMethod, requestBody }: { requestMethod: string; requestBody: string | null | undefined }): Promise<APIGatewayProxyResult> {
@@ -16,12 +11,10 @@ export class APIRequestMapper {
 
     private async checkRequestMethodSupported({ requestMethod, requestBody }: { requestMethod: string; requestBody: string | null | undefined }): Promise<APIGatewayProxyResult> {
         if (requestMethod !== RequestMethod.Post && requestMethod !== RequestMethod.Get && requestMethod !== RequestMethod.Patch) {
-            const statusCode = 405;
 
             const result: APIGatewayProxyResult = {
-                statusCode,
+                statusCode: StatusCode.MethodNotAllowed,
                 body: JSON.stringify({
-                    statusCode,
                     message: `Request method '${requestMethod}' is not supported`,
                 }),
             };
