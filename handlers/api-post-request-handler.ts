@@ -29,14 +29,26 @@ export class APIPostRequestHandler {
         try {
             const device = this.computeDevice(requestBody);
 
+            if (!device.id || !device.latitude || !device.longitude) {
+                result = {
+                    statusCode: StatusCode.BadRequest,
+                    body: JSON.stringify({
+                        message: `Request body is missing one or more fields. Please specify all required fields`,
+                    }),
+                }
+
+                return result;
+            }
+
             const dbDelegate = new DBDelegate();
-            return await dbDelegate.storeOrUpdateDeviceDataInDatabase(device);
+            result = await dbDelegate.storeOrUpdateDeviceDataInDatabase(device);
 
         } catch (err) {
             result = {
-                statusCode: StatusCode.BadRequest,
+                statusCode: StatusCode.InternalError,
                 body: JSON.stringify({
-                    message: `Request body is missing one or more fields. Please specify all required fields`,
+                    message: `An internal error occurred`,
+                    verbose: `${JSON.stringify(err)}`,
                 }),
             }
         }
@@ -48,10 +60,6 @@ export class APIPostRequestHandler {
         const requestBodyObject = JSON.parse(requestBody);
 
         const device = Device.fromObject(requestBodyObject);
-
-        if (!device.id || !device.latitude || !device.longitude) {
-            throw 'Some fields are undefined';
-        }
 
         return device;
     }

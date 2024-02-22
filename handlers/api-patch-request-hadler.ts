@@ -30,22 +30,32 @@ export class APIPatchRequestHandler {
         try {
             const owner = this.computeOwner(requestBody);
 
+            if (!owner.deviceId || !owner.name || !owner.email || !owner.address || !owner.emergencyContact || !owner.emergencyContact.name || !owner.emergencyContact.phone || !owner.emergencyContact.relationship) {
+                result = {
+                    statusCode: StatusCode.BadRequest,
+                    body: JSON.stringify({
+                        message: `Request body is missing one or more fields. Please specify all required fields`,
+                    }),
+                }
+
+                return result;
+            }
+
             const dbDelegate = new DBDelegate();
-            const result = await dbDelegate.updateDeviceDataInDatabaseWithOwnerInfo(owner);
+            result = await dbDelegate.updateDeviceDataInDatabaseWithOwnerInfo(owner);
 
             const smsDelegate = new SMSDelegate();
-            smsDelegate.createTopicForEmergencyAlertsAndSendMessage({
+            smsDelegate.sendSMS({
                 content: `${owner.name} just registered you as an emergency contact`,
                 recipientPhone: owner.emergencyContact.phone
             });
 
-            return result;
-
         } catch (err) {
             result = {
-                statusCode: StatusCode.BadRequest,
+                statusCode: StatusCode.InternalError,
                 body: JSON.stringify({
-                    message: `Request body is missing one or more fields. Please specify all required fields`,
+                    message: "An internal error occurred",
+                    verbose: `${JSON.stringify(err)}`,
                 }),
             }
         }
@@ -57,10 +67,6 @@ export class APIPatchRequestHandler {
         const requestBodyObject = JSON.parse(requestBody);
 
         const owner = Owner.fromObject(requestBodyObject);
-
-        if (!owner.deviceId || !owner.name || !owner.email || !owner.address || !owner.emergencyContact || !owner.emergencyContact.name || !owner.emergencyContact.phone || !owner.emergencyContact.relationship) {
-            throw 'Some fields are undefined';
-        }
 
         return owner;
     }

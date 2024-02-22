@@ -1,5 +1,5 @@
 import { AWSError, DynamoDB } from 'aws-sdk';
-import { Converter, PutItemInputAttributeMap, Key, ExpressionAttributeValueMap } from 'aws-sdk/clients/dynamodb';
+import { Converter, PutItemInputAttributeMap, Key, AttributeValue } from 'aws-sdk/clients/dynamodb';
 import { PromiseResult } from 'aws-sdk/lib/request';
 import { APIGatewayProxyResult } from "aws-lambda";
 import { encodeBase32 } from "geohashing";
@@ -45,6 +45,20 @@ export class DBDelegate {
         const getDeviceResult = await this.getDevice(owner.deviceId);
 
         if (getDeviceResult.$response.data && getDeviceResult.Item) {
+            const item = Converter.unmarshall(getDeviceResult.Item);
+            const ownerName: string | undefined = item.OwnerName;
+
+            if (ownerName) {
+                const result: APIGatewayProxyResult = {
+                    statusCode: StatusCode.BadRequest,
+                    body: JSON.stringify({
+                        message: "This device is already associated with an owner. Ensure you have entered the correct device ID",
+                    }),
+                }
+
+                return result;
+            }
+
             await this.updateDeviceWithOwnerInfo(owner);
 
             const result: APIGatewayProxyResult = {
@@ -151,27 +165,21 @@ export class DBDelegate {
             }
         };
 
-        const coordinatesItem: ExpressionAttributeValueMap = {
-            "Coordinates": {
-                L: [
-                    {
-                        M: {
-                            "Hash": {
-                                S: this.geohash({ latitude: device.latitude, longitude: device.longitude })
-                            },
-                            "Latitude": {
-                                N: `${device.latitude}`
-                            },
-                            "Longitude": {
-                                N: `${device.longitude}`
-                            },
-                            "Timestamp": {
-                                N: `${this.unixTimestamp}`
-                            }
-                        }
-                    }
-                ]
-            },
+        const coordinate: AttributeValue = {
+            M: {
+                "Hash": {
+                    S: this.geohash({ latitude: device.latitude, longitude: device.longitude })
+                },
+                "Latitude": {
+                    N: `${device.latitude}`
+                },
+                "Longitude": {
+                    N: `${device.longitude}`
+                },
+                "Timestamp": {
+                    N: `${this.unixTimestamp}`
+                }
+            }
         };
 
         return db.updateItem({
@@ -181,7 +189,7 @@ export class DBDelegate {
                 "#c": "Coordinates"
             },
             ExpressionAttributeValues: {
-                ":c": coordinatesItem
+                ":c": coordinate
             },
             UpdateExpression: `SET #c[${nextIndex}] = :c`
         }).promise();
@@ -264,7 +272,7 @@ export class DBDelegate {
                     S: `${owner.emergencyContact.relationship}`
                 },
             },
-            UpdateExpression: `SET #on = :on, SET #oe = :oe, SET #oa = :oa, SET #en = :oen, SET #ep = :oep, SET #er = :oer`
+            UpdateExpression: `SET #on = :on, #oe = :oe, #oa = :oa, #en = :oen, #ep = :oep, #er = :oer`
         }).promise();
     }
 

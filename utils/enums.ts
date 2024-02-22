@@ -12,7 +12,3 @@ export enum StatusCode {
     MethodNotAllowed = 405,
     BadRequest = 400,
 }
-
-export enum SNSTopic {
-    EmergencyAlert = 'EMERGENCY_ALERT',
-}
